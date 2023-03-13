@@ -1,0 +1,7 @@
+[cargo-new]
+authors = ["Sebastien Menozzi <seb@discoapp.co>"]
+vcs = "git"
+
+[term]
+verbose = false
+color = 'auto'
