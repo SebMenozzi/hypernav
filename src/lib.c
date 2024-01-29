@@ -444,7 +444,7 @@ __attribute__((export_name("resize"))) void resize(double width, double height)
     viewportWidth = width;
     viewportHeight = height;
     swipeBackScrollLimit = viewportWidth * 5;
-    cellHeight = 70;
+    cellHeight = 100;
     setCellHeight(cellHeight);
     childrenWidth = cellHeight * 0.5 + 40;
     distanceBetweenLevels = bandToDisk(viewportWidth - cellHeight * 0.5 + 12);
@@ -632,6 +632,7 @@ __attribute__((export_name("tick"))) void tick(double timestamp)
     }
     struct moebius deceleratingBase = base;
     bool decelerating = false;
+
     if (panType == PanTypeNone && !willPan && (scrollAmount[focusedScroll] != scrollTarget || scrollAmount[focusedScroll] != constrainedScrollAmount(scrollAmount[focusedScroll], scrollNode[focusedScroll]))) {
         double k = pow(0.998, 1000 * dt);
         double lastScrollAmount = scrollAmount[focusedScroll];
@@ -657,13 +658,16 @@ __attribute__((export_name("tick"))) void tick(double timestamp)
         base = compose(moveBetweenNodes(baseNode, scrollNode[focusedScroll]), originTranslation(bandToDisk(I * scrollAmount[focusedScroll])));
         deceleratingBase = base;
         decelerating = true;
+
         if (scrollAmount[focusedScroll] != scrollTarget || scrollAmount[focusedScroll] != constrained)
             scheduleTick();
     }
+
     if (decelerate(&lateralDeceleration, dt)) {
         deceleratingBase = compose(deceleratingBase, lateralDeceleration.current);
         decelerating = true;
     }
+
     if (decelerating) {
         struct moebius d = domainTransformation(apply(deceleratingBase, 1e-3), &baseNode);
         base = compose(d, base);

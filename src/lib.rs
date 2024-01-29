@@ -78,12 +78,6 @@ static mut INTERACTION_STOPPED_SCROLLING: bool = false;
 
 static mut PAN_TYPE: PanType = PanType::None;
 
-static mut NUMBER_OF_NODES: u16 = 0;
-static mut FOCUSED_NODE: u16 = 0;
-
-static mut VIEWPORT_WIDTH: f32 = 0.0;
-static mut VIEWPORT_HEIGHT: f32 = 0.0;
-
 pub struct App {
     viewport_width: f32,
     viewport_height: f32,
@@ -93,6 +87,9 @@ pub struct App {
     cell_height: f32,
     children_width: f32,
     buldge: f32,
+
+    number_of_nodes: u16,
+    focused_note: u16,
 }
 
 impl App {
@@ -378,17 +375,17 @@ impl App {
         }
     }
 
-    fn deceleration_active(d: Deceleration) -> bool {
+    fn deceleration_active(d: &mut Deceleration) -> bool {
         !App::moebius_equal(d.target, Moebius::identity()) || 
         !App::moebius_equal(d.current, Moebius::identity())
     }
 
-    fn decelerate(d: &Deceleration, dt: f32) -> bool {
-        if !App::deceleration_active(*d) {
+    fn decelerate(d: &mut Deceleration, dt: f32) -> bool {
+        if !App::deceleration_active(d) {
             return false
         }
 
-        let k = d.factor.powf(1000 * dt);
+        let k = d.factor.powf(1000.0 * dt);
 
         d.current = App::compose(
             App::mpow(App::compose(d.current, App::inverse(d.target)), k), 
@@ -408,7 +405,7 @@ impl App {
             d.target.b /= d.target.b.abs();
         }
 
-        if App::deceleration_active(*d) {
+        if App::deceleration_active(d) {
             unsafe { 
                 js::schedule_tick(); 
             }
@@ -416,34 +413,35 @@ impl App {
 
         true
     }
-}
 
-/*
-static struct moebius mpow(struct moebius m, double k)
-{
-    if (cabs(m.a - 1) < 1e-6) {
-        // xx unify these cases somehow?
-        double len = cabs(m.b);
-        if (len < 1e-6)
-            return identity;
-        double Xk = pow(1 - len, k);
-        double Yk = pow(1 + len, k);
-        return (struct moebius){
-            .a = 1,
-            .b = m.b / len * (Yk - Xk) / (Xk + Yk)
-        };
+    fn deceleration_offset_for_velocity(dm: Moebius, dt: f32, factor: f32) -> Moebius {
+        if dt <= 0.0 || App::moebius_equal(dm, Moebius::identity()) {
+            return Moebius::identity();
+        }
+        let k = f32::powf(factor, dt * 1000.0);
+        
+        return App::mpow(dm, 1.0 / (1.0 - k));
     }
-    complex double d = csqrt(4 * m.a * m.b * conj(m.b) + (m.a - 1) * (m.a - 1));
-    complex double A = d - m.a + 1;
-    complex double B = d + m.a - 1;
-    complex double Xk = cpow(-d + m.a + 1, k);
-    complex double Yk = cpow(d + m.a + 1, k);
-    return (struct moebius){
-        .a = (A * Xk + B * Yk) / (B * Xk + A * Yk),
-        .b = m.a * m.b * 2 * (Yk - Xk) / (A * Xk + B * Yk)
-    };
+    
+    fn constrained_scroll_amount(&self, scroll_amount: f32, scroll_node: u16) -> f32 {
+        let mut scroll_amount: f32 = scroll_amount;
+        let mut scroll_node = scroll_node;
+    
+        let bottom_offset = self.scroll_in_node(scroll_amount + self.viewport_height, &mut scroll_node);
+    
+        if scroll_amount + bottom_offset + self.viewport_height > 4.0 * self.cell_height {
+            scroll_amount = 4.0 * self.cell_height - bottom_offset - self.viewport_height;
+        }
+
+        let top_offset = self.scroll_in_node(scroll_amount, &mut scroll_node);
+    
+        if scroll_amount + top_offset < 0.0 {
+            scroll_amount = -top_offset;
+        }
+    
+        return scroll_amount;
+    }
 }
-*/
 
 #[no_mangle]
 pub extern "C" fn start() {

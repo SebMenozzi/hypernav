@@ -351,6 +351,8 @@ window.onload = () => {
         .then(response => response.arrayBuffer())
         .then(wasmBytes => WebAssembly.instantiate(wasmBytes, importObject))
         .then(result => {
+            console.log(result);
+            
             wasm = result.instance.exports;
             wasmMemory.f32 = new Float32Array(wasm.memory.buffer);
             wasmMemory.u16 = new Uint16Array(wasm.memory.buffer);
@@ -456,20 +458,21 @@ const resize = () => {
     }
 }
 
-document.fonts.load('300px Inter').then(() => {
+document.fonts.load('350px Inter').then(() => {
     const fontCanvas = document.createElement('canvas');
     fontCanvas.width = 4096;
     fontCanvas.height = 4096;
     const ctx = fontCanvas.getContext('2d');
-    ctx.font = '300px Inter';
+    ctx.font = '350px Inter';
     ctx.fillStyle = 'white';
 
-    for (let i = 0; i < fontRange.length; ++i)
+    for (let i = 0; i < fontRange.length; ++i) {
         ctx.fillText(
             fontRange[i], 
-            11 + 372 * (i % 11),
-            300 + 400 * Math.floor(i / 11)
+            9 + 372 * (i % 11),
+            320 + 400 * Math.floor(i / 11)
         );
+    }
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, fontTexture);
@@ -477,8 +480,8 @@ document.fonts.load('300px Inter').then(() => {
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    
-    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+
     if (wasm)
         redraw();
 });
